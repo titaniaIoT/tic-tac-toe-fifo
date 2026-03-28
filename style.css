@@ -1,0 +1,90 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #1e1e1e;  /* Nền tối, giảm độ sáng */
+    color: #f4f4f4;  /* Chữ màu sáng nhẹ */
+}
+
+.game-container {
+    text-align: center;
+    background-color: #333;  /* Background cho game-container (màu xám tối) */
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);  /* Shadow nhẹ */
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ddd;  /* Chữ tiêu đề màu xám sáng nhẹ */
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.board {
+    display: inline-block;
+    margin-top: 20px;
+    background-color: #444;  /* Bàn cờ nền xám tối */
+    border-radius: 10px;
+}
+
+.row {
+    display: flex;
+}
+
+.cell {
+    width: 120px;
+    height: 120px;
+    border: 3px solid #777;  /* Đường viền trắng dày, nhưng màu xám nhẹ */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #555;  /* Màu nền các ô bàn cờ */
+    transition: background-color 0.3s, box-shadow 0.3s;
+    border-radius: 5px;
+}
+
+.cell:hover {
+    background-color: #666;  /* Hover ô, đổi màu nhẹ */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);  /* Thêm bóng sáng nhẹ khi hover */
+}
+
+.status {
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #666;  /* Nền button */
+    color: white;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #888;  /* Hover button */
+}
+
+/* Dấu X - Đỏ đậm hơn, sáng nhẹ nhưng không chói */
+.cell.X {
+    color: #cc3c2d;  /* Màu đỏ đậm */
+    text-shadow: 0 0 10px rgba(192, 57, 43, 0.8), 0 0 20px rgba(192, 57, 43, 0.6);  /* Sáng nhẹ */
+}
+
+/* Dấu O - Xanh lá đậm hơn, sáng nhẹ nhưng dễ nhìn */
+.cell.O {
+    color: #2abd68;  /* Màu xanh lá đậm */
+    text-shadow: 0 0 10px rgba(39, 174, 96, 0.8), 0 0 20px rgba(39, 174, 96, 0.6);  /* Sáng nhẹ */
+}
