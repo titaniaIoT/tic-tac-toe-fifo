@@ -8,32 +8,47 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Tic Tac Toe FIFO</h1>
-        <div class="status">
-            <p id="turn-status">Lượt chơi của: X</p>
-            <p id="timer-display">15s</p>  <!-- Hiển thị đồng hồ countdown -->
+        <h1>Tic Tac Toe FIFO (Online)</h1>
+        
+        <!-- Phần chọn phòng -->
+        <div id="room-selection">
+            <input type="text" id="room-id-input" placeholder="Nhập mã phòng (VD: 123)">
+            <button onclick="joinRoom()">Vào phòng</button>
         </div>
-        <div class="board">
-            <div class="row">
-                <div class="cell" onclick="makeMove(0)"></div>
-                <div class="cell" onclick="makeMove(1)"></div>
-                <div class="cell" onclick="makeMove(2)"></div>
+
+        <div id="game-ui" style="display: none;">
+            <div class="status">
+                <p id="room-display">Phòng: ...</p>
+                <p id="player-role">Bạn là: ...</p>
+                <p id="turn-status">Đang chờ người chơi khác...</p>
+                <p id="timer-display">15s</p>
             </div>
-            <div class="row">
-                <div class="cell" onclick="makeMove(3)"></div>
-                <div class="cell" onclick="makeMove(4)"></div>
-                <div class="cell" onclick="makeMove(5)"></div>
+            <div class="board">
+                <div class="row">
+                    <div class="cell" onclick="handleMove(0)"></div>
+                    <div class="cell" onclick="handleMove(1)"></div>
+                    <div class="cell" onclick="handleMove(2)"></div>
+                </div>
+                <div class="row">
+                    <div class="cell" onclick="handleMove(3)"></div>
+                    <div class="cell" onclick="handleMove(4)"></div>
+                    <div class="cell" onclick="handleMove(5)"></div>
+                </div>
+                <div class="row">
+                    <div class="cell" onclick="handleMove(6)"></div>
+                    <div class="cell" onclick="handleMove(7)"></div>
+                    <div class="cell" onclick="handleMove(8)"></div>
+                </div>
             </div>
-            <div class="row">
-                <div class="cell" onclick="makeMove(6)"></div>
-                <div class="cell" onclick="makeMove(7)"></div>
-                <div class="cell" onclick="makeMove(8)"></div>
+            <div>
+                <button onclick="requestReset()">Chơi lại</button>
             </div>
-        </div>
-        <div>
-            <button onclick="resetGame()">Chơi lại</button>
         </div>
     </div>
+
+    <!-- Firebase SDK (Compatibility version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

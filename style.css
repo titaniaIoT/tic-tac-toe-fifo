@@ -56,8 +56,29 @@ h1 {
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);  /* Thêm bóng sáng nhẹ khi hover */
 }
 
-.status {
-    margin-top: 20px;
+#room-selection {
+    margin-bottom: 20px;
+}
+
+#room-id-input {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #777;
+    background-color: #444;
+    color: white;
+    margin-right: 10px;
+}
+
+#player-role {
+    font-weight: bold;
+    color: #f1c40f;
+    margin: 5px 0;
+}
+
+#room-display {
+    font-size: 14px;
+    color: #aaa;
 }
 
 button {

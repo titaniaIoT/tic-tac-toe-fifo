@@ -1,126 +1,179 @@
-let board = ['', '', '', '', '', '', '', '', ''];  // Board state
-let currentPlayer = 'X';  // Current player (X or O)
-let moveHistoryX = [];  // To keep track of X's moves
-let moveHistoryO = [];  // To keep track of O's moves
+// CẤU HÌNH FIREBASE - Thay thế bằng thông tin từ Firebase Console của bạn
+const firebaseConfig = {
+    apiKey: "AIzaSyD8-RvPgMyCLiuRKSF6EImaKikrx1xZIoQ",
+    authDomain: "tictactoe-9e420.firebaseapp.com",
+    databaseURL: "https://tictactoe-9e420-default-rtdb.firebaseio.com",
+    projectId: "tictactoe-9e420",
+    storageBucket: "tictactoe-9e420.firebasestorage.app",
+    messagingSenderId: "626993248199",
+    appId: "1:626993248199:web:4d17857904aa4348b48be2",
+    measurementId: "G-CKLL9Y8K2Q"
+  };
+// Khởi tạo Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+let board = ['', '', '', '', '', '', '', '', ''];
+let currentPlayer = 'X';
+let moveHistoryX = [];
+let moveHistoryO = [];
 let countdownTimer;
-let timeLeft = 15;  // 15 seconds per player
+let timeLeft = 15;
+let myRole = null; // 'X', 'O' hoặc 'viewer'
+let currentRoomId = null;
 
 const turnStatus = document.getElementById('turn-status');
 const timerDisplay = document.getElementById('timer-display');
+const playerRoleDisplay = document.getElementById('player-role');
+const roomDisplay = document.getElementById('room-display');
 
-// Start the countdown timer
-function startTimer() {
-    timeLeft = 15;  // Set the countdown to 15 seconds
-    timerDisplay.textContent = timeLeft + 's';
+// Tham gia phòng
+function joinRoom() {
+    const roomId = document.getElementById('room-id-input').value.trim();
+    if (!roomId) return alert("Vui lòng nhập mã phòng!");
+    
+    currentRoomId = roomId;
+    const roomRef = database.ref('rooms/' + roomId);
 
-    // Clear any existing timer
-    if (countdownTimer) {
-        clearInterval(countdownTimer);
-    }
-
-    countdownTimer = setInterval(function() {
-        timeLeft--;
-        timerDisplay.textContent = timeLeft + 's';
+    roomRef.once('value').then(snapshot => {
+        const data = snapshot.val();
         
-        if (timeLeft <= 0) {
-            clearInterval(countdownTimer);
-            alert(currentPlayer + "'s time is up! " + currentPlayer + " loses!");
-            resetGame();  // Reset the game after time is up and the player loses
-        }
-    }, 1000);
-}
-
-// Switch player after a valid move or after time runs out
-function switchPlayer() {
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    turnStatus.textContent = 'Lượt chơi của: ' + currentPlayer;
-    startTimer();  // Restart the timer when switching turns
-}
-
-// Make a move on the board
-function makeMove(index) {
-    if (board[index] === '') {
-        // Record the move
-        board[index] = currentPlayer;
-
-        if (currentPlayer === 'X') {
-            moveHistoryX.push(index);  // Record X's move
-            // If X has more than 3 moves, remove the first one
-            if (moveHistoryX.length > 3) {
-                const firstMoveIndex = moveHistoryX.shift();  // Remove first X move
-                board[firstMoveIndex] = '';  // Clear the cell
-            }
+        if (!data || !data.playerX) {
+            myRole = 'X';
+            roomRef.update({ playerX: true, status: 'waiting' });
+        } else if (!data.playerO) {
+            myRole = 'O';
+            roomRef.update({ playerO: true, status: 'playing' });
         } else {
-            moveHistoryO.push(index);  // Record O's move
-            // If O has more than 3 moves, remove the first one
-            if (moveHistoryO.length > 3) {
-                const firstMoveIndex = moveHistoryO.shift();  // Remove first O move
-                board[firstMoveIndex] = '';  // Clear the cell
-            }
+            myRole = 'viewer';
+            alert("Phòng đã đầy! Bạn vào với vai trò người xem.");
         }
 
-        // Update the board visually
+        playerRoleDisplay.textContent = "Bạn là: " + (myRole === 'viewer' ? "Người xem" : myRole);
+        roomDisplay.textContent = "Phòng: " + roomId;
+        document.getElementById('room-selection').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'block';
+
+        listenToRoom(roomId);
+    });
+}
+
+// Lắng nghe thay đổi từ Firebase
+function listenToRoom(roomId) {
+    const roomRef = database.ref('rooms/' + roomId);
+    roomRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        board = data.board || ['', '', '', '', '', '', '', '', ''];
+        currentPlayer = data.currentPlayer || 'X';
+        moveHistoryX = data.moveHistoryX || [];
+        moveHistoryO = data.moveHistoryO || [];
+        
         renderBoard();
+        updateStatus(data.status);
 
-        // Check for winner or draw
-        if (checkWinner()) {
-            setTimeout(() => alert(currentPlayer + ' wins!'), 100);
-            clearInterval(countdownTimer);  // Stop the timer when game ends
-            return;
+        if (data.status === 'playing') {
+            startTimerLocal();
+        } else {
+            clearInterval(countdownTimer);
         }
+    });
+}
 
-        // Check for draw
-        if (board.every(cell => cell !== '')) {
-            setTimeout(() => alert('It\'s a draw!'), 100);
-            clearInterval(countdownTimer);  // Stop the timer when game ends
-            return;
-        }
-
-        // Change player
-        switchPlayer();
+function updateStatus(status) {
+    if (status === 'waiting') {
+        turnStatus.textContent = "Đang chờ người chơi O...";
+    } else if (status === 'playing') {
+        turnStatus.textContent = "Lượt chơi của: " + currentPlayer;
+    } else if (status === 'finished') {
+        turnStatus.textContent = "Trận đấu kết thúc!";
     }
 }
 
-// Render the board
+// Gửi nước đi lên Firebase
+function handleMove(index) {
+    if (myRole !== currentPlayer) return; // Không phải lượt của bạn
+    if (board[index] !== '') return; // Ô đã có người chơi
+
+    const newBoard = [...board];
+    newBoard[index] = currentPlayer;
+
+    let newHistoryX = [...moveHistoryX];
+    let newHistoryO = [...moveHistoryO];
+
+    if (currentPlayer === 'X') {
+        newHistoryX.push(index);
+        if (newHistoryX.length > 3) {
+            const firstMove = newHistoryX.shift();
+            newBoard[firstMove] = '';
+        }
+    } else {
+        newHistoryO.push(index);
+        if (newHistoryO.length > 3) {
+            const firstMove = newHistoryO.shift();
+            newBoard[firstMove] = '';
+        }
+    }
+
+    const nextPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    
+    const updateData = {
+        board: newBoard,
+        currentPlayer: nextPlayer,
+        moveHistoryX: newHistoryX,
+        moveHistoryO: newHistoryO,
+        lastUpdate: Date.now()
+    };
+
+    if (checkWinnerOnline(newBoard)) {
+        updateData.status = 'finished';
+        alert(currentPlayer + " thắng!");
+    }
+
+    database.ref('rooms/' + currentRoomId).update(updateData);
+}
+
 function renderBoard() {
     const cells = document.querySelectorAll('.cell');
     cells.forEach((cell, index) => {
         cell.textContent = board[index];
-        if (board[index] === 'X') {
-            cell.classList.add('X');  // Add class X for red
-        } else if (board[index] === 'O') {
-            cell.classList.add('O');  // Add class O for green
-        } else {
-            cell.classList.remove('X', 'O');  // Remove class if cell is empty
-        }
+        cell.className = 'cell ' + (board[index] || '');
     });
 }
 
-// Check for a winner
-function checkWinner() {
+function checkWinnerOnline(currentBoard) {
     const winPatterns = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],  // Horizontal
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],  // Vertical
-        [0, 4, 8], [2, 4, 6]               // Diagonal
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
     ];
+    return winPatterns.some(p => currentBoard[p[0]] && currentBoard[p[0]] === currentBoard[p[1]] && currentBoard[p[0]] === currentBoard[p[2]]);
+}
 
-    return winPatterns.some(pattern => {
-        const [a, b, c] = pattern;
-        return board[a] && board[a] === board[b] && board[a] === board[c];
+function startTimerLocal() {
+    timeLeft = 15;
+    timerDisplay.textContent = timeLeft + 's';
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft + 's';
+        if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            if (myRole === currentPlayer) {
+                alert("Hết thời gian! Bạn đã thua.");
+                requestReset();
+            }
+        }
+    }, 1000);
+}
+
+function requestReset() {
+    database.ref('rooms/' + currentRoomId).update({
+        board: ['', '', '', '', '', '', '', '', ''],
+        currentPlayer: 'X',
+        moveHistoryX: [],
+        moveHistoryO: [],
+        status: 'playing'
     });
 }
-
-// Reset the game
-function resetGame() {
-    board = ['', '', '', '', '', '', '', '', ''];
-    moveHistoryX = [];
-    moveHistoryO = [];
-    currentPlayer = 'X';
-    turnStatus.textContent = 'Lượt chơi của: X';
-    renderBoard();
-    clearInterval(countdownTimer);  // Clear the timer on reset
-    startTimer();  // Restart the timer after reset
-}
-
-// Initial timer start
-startTimer();
