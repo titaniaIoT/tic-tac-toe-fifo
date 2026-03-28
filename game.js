@@ -8,7 +8,7 @@ const firebaseConfig = {
     messagingSenderId: "626993248199",
     appId: "1:626993248199:web:4d17857904aa4348b48be2",
     measurementId: "G-CKLL9Y8K2Q"
-  };
+};
 
 // Khởi tạo Firebase
 firebase.initializeApp(firebaseConfig);
@@ -129,7 +129,7 @@ function backToLobby() {
     clearInterval(countdownTimer);
 }
 
-// --- 2. GAME LOGIC (Đã sửa đổi từ phiên bản trước) ---
+// --- 2. GAME LOGIC ---
 
 function listenToRoom(roomId) {
     database.ref('rooms/' + roomId).on('value', (snapshot) => {
