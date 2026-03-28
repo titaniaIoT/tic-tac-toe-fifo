@@ -9,92 +9,163 @@ const firebaseConfig = {
     appId: "1:626993248199:web:4d17857904aa4348b48be2",
     measurementId: "G-CKLL9Y8K2Q"
   };
+
 // Khởi tạo Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-let board = ['', '', '', '', '', '', '', '', ''];
+// Biến toàn cục
+let myUsername = "";
+let myRole = null; // 'X' hoặc 'O'
+let currentRoomId = null;
+let board = Array(9).fill('');
 let currentPlayer = 'X';
+let countdownTimer;
 let moveHistoryX = [];
 let moveHistoryO = [];
-let countdownTimer;
-let timeLeft = 15;
-let myRole = null; // 'X', 'O' hoặc 'viewer'
-let currentRoomId = null;
 
-const turnStatus = document.getElementById('turn-status');
-const timerDisplay = document.getElementById('timer-display');
-const playerRoleDisplay = document.getElementById('player-role');
-const roomDisplay = document.getElementById('room-display');
+// DOM Elements
+const lobbyUI = document.getElementById('lobby-ui');
+const gameUI = document.getElementById('game-ui');
+const roomListDiv = document.getElementById('room-list');
 
-// Tham gia phòng
-function joinRoom() {
-    const roomId = document.getElementById('room-id-input').value.trim();
-    if (!roomId) return alert("Vui lòng nhập mã phòng!");
+// --- 1. LOGIN & LOBBY ---
+
+function login() {
+    const input = document.getElementById('username-input');
+    myUsername = input.value.trim();
+    if (!myUsername) return alert("Vui lòng nhập tên!");
     
-    currentRoomId = roomId;
-    const roomRef = database.ref('rooms/' + roomId);
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('welcome-text').textContent = `Xin chào, ${myUsername}`;
+    lobbyUI.style.display = 'block';
+    
+    listenToLobby();
+}
 
-    roomRef.once('value').then(snapshot => {
-        const data = snapshot.val();
+function listenToLobby() {
+    database.ref('rooms').on('value', (snapshot) => {
+        const rooms = snapshot.val();
+        roomListDiv.innerHTML = "";
         
-        if (!data || !data.playerX) {
-            myRole = 'X';
-            roomRef.update({ playerX: true, status: 'waiting' });
-        } else if (!data.playerO) {
-            myRole = 'O';
-            roomRef.update({ playerO: true, status: 'playing' });
-        } else {
-            myRole = 'viewer';
-            alert("Phòng đã đầy! Bạn vào với vai trò người xem.");
+        if (!rooms) {
+            roomListDiv.innerHTML = "<p>Chưa có phòng nào. Hãy tạo phòng mới!</p>";
+            return;
         }
 
-        playerRoleDisplay.textContent = "Bạn là: " + (myRole === 'viewer' ? "Người xem" : myRole);
-        roomDisplay.textContent = "Phòng: " + roomId;
-        document.getElementById('room-selection').style.display = 'none';
-        document.getElementById('game-ui').style.display = 'block';
-
-        listenToRoom(roomId);
+        Object.keys(rooms).forEach(roomId => {
+            const room = rooms[roomId];
+            const count = (room.playerX ? 1 : 0) + (room.playerO ? 1 : 0);
+            
+            const roomEl = document.createElement('div');
+            roomEl.className = 'room-item';
+            roomEl.innerHTML = `
+                <span>Phòng: ${roomId} (${count}/2)</span>
+                <button onclick="joinRoom('${roomId}')" ${count >= 2 ? 'disabled' : ''}>
+                    ${count >= 2 ? 'Đầy' : 'Vào chơi'}
+                </button>
+            `;
+            roomListDiv.appendChild(roomEl);
+        });
     });
 }
 
-// Lắng nghe thay đổi từ Firebase
-function listenToRoom(roomId) {
+function createRoom() {
+    const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+    const newRoom = {
+        playerX: { name: myUsername },
+        status: 'waiting',
+        board: Array(9).fill(''),
+        currentPlayer: 'X',
+        moveHistoryX: [],
+        moveHistoryO: []
+    };
+
+    database.ref('rooms/' + roomId).set(newRoom).then(() => {
+        enterRoom(roomId, 'X');
+    });
+}
+
+function joinRoom(roomId) {
     const roomRef = database.ref('rooms/' + roomId);
-    roomRef.on('value', (snapshot) => {
+    roomRef.once('value', (snapshot) => {
+        const room = snapshot.val();
+        if (!room) return;
+
+        if (!room.playerO) {
+            roomRef.update({
+                playerO: { name: myUsername },
+                status: 'playing'
+            }).then(() => {
+                enterRoom(roomId, 'O');
+            });
+        }
+    });
+}
+
+function enterRoom(roomId, role) {
+    currentRoomId = roomId;
+    myRole = role;
+    
+    lobbyUI.style.display = 'none';
+    gameUI.style.display = 'block';
+    document.getElementById('room-display').textContent = `Phòng: ${roomId}`;
+    
+    listenToRoom(roomId);
+}
+
+function backToLobby() {
+    if (!currentRoomId) return;
+    
+    const roomRef = database.ref('rooms/' + currentRoomId);
+    roomRef.off(); // Ngừng lắng nghe room cũ
+    
+    // Logic đơn giản: Xóa luôn phòng khi có người thoát (Bạn có thể cải tiến sau)
+    roomRef.remove(); 
+    
+    currentRoomId = null;
+    gameUI.style.display = 'none';
+    lobbyUI.style.display = 'block';
+    clearInterval(countdownTimer);
+}
+
+// --- 2. GAME LOGIC (Đã sửa đổi từ phiên bản trước) ---
+
+function listenToRoom(roomId) {
+    database.ref('rooms/' + roomId).on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        board = data.board || ['', '', '', '', '', '', '', '', ''];
+        board = data.board || Array(9).fill('');
         currentPlayer = data.currentPlayer || 'X';
         moveHistoryX = data.moveHistoryX || [];
         moveHistoryO = data.moveHistoryO || [];
+
+        // Cập nhật giao diện tên người chơi
+        document.getElementById('name-x').textContent = data.playerX ? data.playerX.name : "Đang chờ...";
+        document.getElementById('name-o').textContent = data.playerO ? data.playerO.name : "Đang chờ...";
         
+        // Highlight người đang đến lượt
+        document.getElementById('info-x').classList.toggle('active', currentPlayer === 'X');
+        document.getElementById('info-o').classList.toggle('active', currentPlayer === 'O');
+
         renderBoard();
-        updateStatus(data.status);
 
         if (data.status === 'playing') {
+            document.getElementById('turn-status').textContent = `Lượt chơi của: ${currentPlayer === 'X' ? data.playerX.name : data.playerO.name}`;
             startTimerLocal();
-        } else {
+        } else if (data.status === 'waiting') {
+            document.getElementById('turn-status').textContent = "Đang chờ người chơi O...";
+        } else if (data.status === 'finished') {
+            document.getElementById('turn-status').textContent = "Kết thúc!";
             clearInterval(countdownTimer);
         }
     });
 }
 
-function updateStatus(status) {
-    if (status === 'waiting') {
-        turnStatus.textContent = "Đang chờ người chơi O...";
-    } else if (status === 'playing') {
-        turnStatus.textContent = "Lượt chơi của: " + currentPlayer;
-    } else if (status === 'finished') {
-        turnStatus.textContent = "Trận đấu kết thúc!";
-    }
-}
-
-// Gửi nước đi lên Firebase
 function handleMove(index) {
-    if (myRole !== currentPlayer) return; // Không phải lượt của bạn
-    if (board[index] !== '') return; // Ô đã có người chơi
+    if (myRole !== currentPlayer) return;
+    if (board[index] !== '') return;
 
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
@@ -105,30 +176,28 @@ function handleMove(index) {
     if (currentPlayer === 'X') {
         newHistoryX.push(index);
         if (newHistoryX.length > 3) {
-            const firstMove = newHistoryX.shift();
-            newBoard[firstMove] = '';
+            const first = newHistoryX.shift();
+            newBoard[first] = '';
         }
     } else {
         newHistoryO.push(index);
         if (newHistoryO.length > 3) {
-            const firstMove = newHistoryO.shift();
-            newBoard[firstMove] = '';
+            const first = newHistoryO.shift();
+            newBoard[first] = '';
         }
     }
 
     const nextPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    
     const updateData = {
         board: newBoard,
         currentPlayer: nextPlayer,
         moveHistoryX: newHistoryX,
-        moveHistoryO: newHistoryO,
-        lastUpdate: Date.now()
+        moveHistoryO: newHistoryO
     };
 
     if (checkWinnerOnline(newBoard)) {
         updateData.status = 'finished';
-        alert(currentPlayer + " thắng!");
+        alert(`${myUsername} thắng!`);
     }
 
     database.ref('rooms/' + currentRoomId).update(updateData);
@@ -142,26 +211,22 @@ function renderBoard() {
     });
 }
 
-function checkWinnerOnline(currentBoard) {
-    const winPatterns = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],
-        [0, 4, 8], [2, 4, 6]
-    ];
-    return winPatterns.some(p => currentBoard[p[0]] && currentBoard[p[0]] === currentBoard[p[1]] && currentBoard[p[0]] === currentBoard[p[2]]);
+function checkWinnerOnline(b) {
+    const p = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    return p.some(x => b[x[0]] && b[x[0]] === b[x[1]] && b[x[0]] === b[x[2]]);
 }
 
 function startTimerLocal() {
-    timeLeft = 15;
-    timerDisplay.textContent = timeLeft + 's';
+    let timeLeft = 15;
+    document.getElementById('timer-display').textContent = timeLeft + 's';
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
         timeLeft--;
-        timerDisplay.textContent = timeLeft + 's';
+        document.getElementById('timer-display').textContent = timeLeft + 's';
         if (timeLeft <= 0) {
             clearInterval(countdownTimer);
             if (myRole === currentPlayer) {
-                alert("Hết thời gian! Bạn đã thua.");
+                alert("Hết thời gian! Bạn thua.");
                 requestReset();
             }
         }
@@ -170,7 +235,7 @@ function startTimerLocal() {
 
 function requestReset() {
     database.ref('rooms/' + currentRoomId).update({
-        board: ['', '', '', '', '', '', '', '', ''],
+        board: Array(9).fill(''),
         currentPlayer: 'X',
         moveHistoryX: [],
         moveHistoryO: [],
