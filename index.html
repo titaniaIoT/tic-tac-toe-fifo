@@ -44,17 +44,19 @@
                 <div id="info-x" class="player-box">
                     <span class="mark">X</span>
                     <span id="name-x">Đang chờ...</span>
+                    <div id="ready-x" class="ready-status">Chưa sẵn sàng</div>
                 </div>
                 <div class="vs">VS</div>
                 <div id="info-o" class="player-box">
                     <span class="mark">O</span>
                     <span id="name-o">Đang chờ...</span>
+                    <div id="ready-o" class="ready-status">Chưa sẵn sàng</div>
                 </div>
             </div>
 
             <div class="status">
                 <p id="turn-status">Đang chờ đối thủ...</p>
-                <p id="timer-display">15s</p>
+                <p id="timer-display" style="display: none;">15s</p>
             </div>
 
             <div class="board">
@@ -65,7 +67,7 @@
             </div>
 
             <div class="controls">
-                <button onclick="requestReset()">Chơi lại</button>
+                <button id="ready-btn" onclick="toggleReady()">Sẵn sàng</button>
             </div>
         </div>
     </div>
