@@ -212,7 +212,7 @@ function listenToRoom(roomId) {
         document.getElementById('ready-o').className = "ready-status" + (readyO ? " is-ready" : "");
 
         // TỰ ĐỘNG BẮT ĐẦU KHI ĐỦ 2 NGƯỜI SẴN SÀNG
-        if (currentRoomStatus === 'waiting' && pX && pO && pX.ready && pO.ready) {
+        if ((currentRoomStatus === 'waiting' || currentRoomStatus === 'finished') && pX && pO && pX.ready && pO.ready) {
             roomRef.update({
                 status: 'playing',
                 board: Array(9).fill(''),
