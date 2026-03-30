@@ -160,8 +160,7 @@ function backToLobby() {
 // --- 2. READY LOGIC ---
 
 function toggleReady() {
-    if (isMeReady) return;
-    database.ref(`rooms/${currentRoomId}/player${myRole}`).update({ ready: true });
+    database.ref(`rooms/${currentRoomId}/player${myRole}`).update({ ready: !isMeReady });
 }
 
 // --- 3. GAME LOGIC ---
@@ -235,9 +234,9 @@ function listenToRoom(roomId) {
             readyBtn.style.display = 'block';
             backBtn.style.display = 'block';
             document.getElementById('timer-display').style.display = 'none';
-            readyBtn.textContent = isMeReady ? "Đã sẵn sàng" : "Sẵn sàng";
+            readyBtn.textContent = isMeReady ? "Hủy sẵn sàng" : "Sẵn sàng";
             readyBtn.className = isMeReady ? "active" : "";
-            readyBtn.disabled = isMeReady;
+            readyBtn.disabled = false;
         }
 
         // WINNER UI
