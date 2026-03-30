@@ -255,7 +255,7 @@ function listenToRoom(roomId) {
             document.getElementById('turn-status').textContent = "Hãy sẵn sàng để bắt đầu!";
         } else if (currentRoomStatus === 'finished') {
             clearInterval(countdownTimer);
-            const winnerMark = getWinnerMark(board);
+            const winnerMark = data.winner || getWinnerMark(board);
             if (winnerMark === 'X') {
                 document.getElementById('info-x').classList.add('winner-flash');
                 document.getElementById('turn-status').textContent = `Chiến thắng: ${pX.name}!`;
@@ -292,8 +292,10 @@ function handleMove(index) {
         moveHistoryO: newHistoryO
     };
 
-    if (getWinnerMark(newBoard)) {
+    const winnerMark = getWinnerMark(newBoard);
+    if (winnerMark) {
         updateData.status = 'finished';
+        updateData.winner = winnerMark;
         updateData['playerX/ready'] = false;
         updateData['playerO/ready'] = false;
     }
@@ -315,7 +317,7 @@ function getWinnerMark(b) {
 }
 
 function startTimerLocal() {
-    let timeLeft = 15;
+    let timeLeft = 20;
     document.getElementById('timer-display').textContent = timeLeft + 's';
     clearInterval(countdownTimer);
     
@@ -326,8 +328,10 @@ function startTimerLocal() {
             clearInterval(countdownTimer);
             if (myRole === currentPlayer) {
                 const roomRef = database.ref('rooms/' + currentRoomId);
+                const opponentRole = (myRole === 'X' ? 'O' : 'X');
                 roomRef.update({
                     status: 'finished',
+                    winner: opponentRole,
                     'playerX/ready': false,
                     'playerO/ready': false
                 });
