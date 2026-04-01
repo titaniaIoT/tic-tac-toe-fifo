@@ -88,6 +88,22 @@ function createRoom() {
     database.ref('rooms/' + roomId).set(newRoom).then(() => enterRoom(roomId, 'X'));
 }
 
+function searchRoom() {
+    const roomId = document.getElementById('search-room-input').value.trim();
+    if (!roomId) return alert("Vui lòng nhập mã phòng!");
+    
+    // Kiểm tra xem phòng có tồn tại không
+    database.ref('rooms/' + roomId).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            joinRoom(roomId);
+            // Xóa input sau khi tìm
+            document.getElementById('search-room-input').value = "";
+        } else {
+            alert("Không tìm thấy phòng " + roomId);
+        }
+    });
+}
+
 function joinRoom(roomId) {
     const roomRef = database.ref('rooms/' + roomId);
     roomRef.once('value', (snapshot) => {

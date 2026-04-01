@@ -26,6 +26,12 @@
                 <span id="welcome-text">Xin chào, ...</span>
                 <button onclick="createRoom()" class="btn-create">+ Tạo phòng mới</button>
             </div>
+
+            <div class="lobby-search">
+                <input type="number" id="search-room-input" placeholder="Nhập mã phòng (VD: 1234)">
+                <button onclick="searchRoom()" class="btn-search">Tìm phòng</button>
+            </div>
+
             <h3>Danh sách phòng đang chờ</h3>
             <div id="room-list" class="room-list">
                 <!-- Danh sách phòng sẽ hiện ở đây -->

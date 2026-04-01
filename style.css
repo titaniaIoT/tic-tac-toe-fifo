@@ -56,6 +56,29 @@ body {
     border-bottom: 1px solid #444;
 }
 
+.lobby-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.lobby-search input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background: #222;
+    color: white;
+}
+
+.btn-search {
+    background: #3498db;
+}
+
+.btn-search:hover {
+    background: #2980b9;
+}
+
 .room-list {
     max-height: 300px;
     overflow-y: auto;
