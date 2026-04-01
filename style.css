@@ -227,3 +227,77 @@ button:hover { background: #666; }
 .btn-create:hover { background: #2ecc71; }
 
 .btn-back { background: #c0392b; padding: 5px 10px; font-size: 12px; }
+
+/* Chat Styles */
+.chat-container {
+    margin-top: 20px;
+    background: #222;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding-right: 5px;
+    text-align: left;
+}
+
+.message {
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    word-wrap: break-word;
+    max-width: 85%;
+}
+
+.my-message {
+    background: #3498db;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.other-message {
+    background: #444;
+    color: #ddd;
+    align-self: flex-start;
+}
+
+.chat-input {
+    display: flex;
+    gap: 5px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background: #333;
+    color: white;
+}
+
+.btn-send {
+    background: #27ae60;
+    padding: 8px 15px;
+    font-size: 14px;
+}
+
+.btn-send:hover {
+    background: #2ecc71;
+}
+
+/* Custom Scrollbar for Chat */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}

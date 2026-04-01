@@ -131,11 +131,60 @@ function enterRoom(roomId, role) {
     gameUI.style.display = 'block';
     document.getElementById('room-display').textContent = `Phòng: ${roomId}`;
     
+    // Clear old chat when entering a room
+    document.getElementById('chat-messages').innerHTML = "";
+    
     // Thiết lập tự động xóa node người chơi khi mất kết nối/đóng trình duyệt
     const myPlayerRef = database.ref(`rooms/${roomId}/player${role}`);
     myPlayerRef.onDisconnect().remove();
 
     listenToRoom(roomId);
+    listenToChat(roomId);
+}
+
+function sendMessage() {
+    const input = document.getElementById('chat-input-field');
+    const text = input.value.trim();
+    if (!text || !currentRoomId) return;
+
+    const message = {
+        sender: myUsername,
+        text: text,
+        timestamp: Date.now()
+    };
+
+    database.ref(`rooms/${currentRoomId}/chat`).push(message);
+    input.value = "";
+}
+
+// Add event listener for "Enter" key in chat input
+document.addEventListener('DOMContentLoaded', () => {
+    const chatInput = document.getElementById('chat-input-field');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+});
+
+function listenToChat(roomId) {
+    const chatRef = database.ref(`rooms/${roomId}/chat`);
+    chatRef.off(); // Prevent multiple listeners
+    chatRef.on('child_added', (snapshot) => {
+        const msg = snapshot.val();
+        displayMessage(msg);
+    });
+}
+
+function displayMessage(msg) {
+    const chatMessages = document.getElementById('chat-messages');
+    const msgEl = document.createElement('div');
+    msgEl.className = `message ${msg.sender === myUsername ? 'my-message' : 'other-message'}`;
+    msgEl.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+    chatMessages.appendChild(msgEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function backToLobby() {

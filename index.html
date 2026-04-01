@@ -75,6 +75,15 @@
             <div class="controls">
                 <button id="ready-btn" onclick="toggleReady()">Sẵn sàng</button>
             </div>
+
+            <!-- Chat Room -->
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input-field" placeholder="Nhập tin nhắn..." maxlength="50">
+                    <button onclick="sendMessage()" class="btn-send">Gửi</button>
+                </div>
+            </div>
         </div>
     </div>
 
